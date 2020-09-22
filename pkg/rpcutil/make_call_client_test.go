@@ -2,11 +2,14 @@ package rpcutil_test
 
 import (
 	"errors"
-	"github.com/wenerme/uo/pkg/rpcutil"
 	"net"
 	"net/http"
 	"net/rpc"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/wenerme/uo/pkg/rpcutil"
 )
 
 type Args struct {
@@ -40,37 +43,33 @@ type ArithClient struct {
 
 func TestMakeCallClient(t *testing.T) {
 	arith := new(Arith)
-	rpc.Register(arith)
+	assert.NoError(t, rpc.Register(arith))
+
 	rpc.HandleHTTP()
 	l, e := net.Listen("tcp", ":1234")
-	if e != nil {
-		t.Fatal("listen error:", e)
-	}
-	go http.Serve(l, nil)
+	assert.NoError(t, e)
+
+	go func() {
+		assert.NoError(t, http.Serve(l, nil))
+	}()
 
 	// Client
 	c := &ArithClient{}
 	client, err := rpc.DialHTTP("tcp", "127.0.0.1:1234")
-	if err != nil {
-		panic(err)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, rpcutil.MakeCallClient(client.Call, "Arith", c))
+
+	{
+		rel, err := c.Multiply(&Args{A: 10, B: 2})
+		assert.NoError(t, err)
+		assert.Equal(t, rel, 20)
 	}
 
-	if err := rpcutil.MakeCallClient(client.Call, "Arith", c); err != nil {
-		t.Fatal(err)
-	}
-
-	if rel, err := c.Multiply(&Args{A: 10, B: 2}); err != nil {
-		t.Fatal(err)
-	} else {
-		if rel != 20 {
-			t.Fatal()
-		}
-	}
-	if rel, err := c.Divide(&Args{A: 10, B: 2}); err != nil {
-		t.Fatal(err)
-	} else {
-		if !(rel.Quo == 5 && rel.Rem == 0) {
-			t.Fatal()
-		}
+	{
+		rel, err := c.Divide(&Args{A: 10, B: 2})
+		assert.NoError(t, err)
+		assert.Equal(t, rel, Quotient{Quo: 5, Rem: 0})
 	}
 }

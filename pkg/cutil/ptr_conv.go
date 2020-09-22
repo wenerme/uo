@@ -2,9 +2,11 @@ package cutil
 
 //#include "./ptr_conv.h"
 import "C"
-import "unsafe"
-import "reflect"
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+	"unsafe"
+)
 
 // (**char,n) -> [][]byte
 func StrArrToByteSlice(arr unsafe.Pointer, c int) [][]byte {
@@ -12,7 +14,7 @@ func StrArrToByteSlice(arr unsafe.Pointer, c int) [][]byte {
 	for i := 0; i < c; i++ {
 		s := C.StrArrAt((**C.char)(arr), C.int(i))
 		l := C.int(C.strlen(s))
-		//func C.GoBytes(cArray unsafe.Pointer, length C.int) []byte
+		// func C.GoBytes(cArray unsafe.Pointer, length C.int) []byte
 		slices[i] = C.GoBytes(unsafe.Pointer(s), l)
 	}
 	return slices
@@ -22,7 +24,7 @@ func StrArrToByteSlice(arr unsafe.Pointer, c int) [][]byte {
 func StrArrToStringSlice(strArr unsafe.Pointer, c int) []string {
 	slices := make([]string, c)
 	for i := 0; i < c; i++ {
-		slices[i] = string(C.GoString(C.StrArrAt((**C.char)(strArr), C.int(i))))
+		slices[i] = C.GoString(C.StrArrAt((**C.char)(strArr), C.int(i)))
 	}
 	return slices
 }
@@ -40,7 +42,7 @@ func VarArgsPtr(args ...interface{}) (unsafe.Pointer, error) {
 	size := int(unsafe.Sizeof(C.uintptr_t(0)))
 	list := C.malloc(C.size_t(size * len(args)))
 
-	//values := make([]uintptr, len(args))
+	// values := make([]uintptr, len(args))
 	for i, arg := range args {
 		ptr := unsafe.Pointer(uintptr(list) + uintptr(size*i))
 		var val C.uintptr_t
@@ -54,7 +56,7 @@ func VarArgsPtr(args ...interface{}) (unsafe.Pointer, error) {
 			return nil, fmt.Errorf("Can not cast %T %#v to uintptr", arg, arg)
 		}
 		*(*C.uintptr_t)(ptr) = val
-		//values[i] = uintptr(val)
+		// values[i] = uintptr(val)
 	}
 	return list, nil
 }
