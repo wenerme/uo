@@ -4,11 +4,10 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/mitchellh/mapstructure"
 )
 
-type RemoteCallHandlerFunc func(ctx context.Context, request *RemoteCallRequest) (response *RemoteCallResponse, err error)
+type RemoteCallHandlerFunc func(ctx context.Context, request *Request) (response *Response, err error)
 
 var nilError = reflect.Zero(reflect.TypeOf((*error)(nil)).Elem())
 
@@ -26,7 +25,7 @@ func MakeRPCCallClient(handler RemoteCallHandlerFunc, coord ServiceCoordinate, v
 				ev := nilError
 				rv := reflect.New(f.Type.Out(0))
 
-				req := &RemoteCallRequest{
+				req := &Request{
 					Coordinate: coord,
 
 					MethodName: f.Name,
@@ -34,8 +33,6 @@ func MakeRPCCallClient(handler RemoteCallHandlerFunc, coord ServiceCoordinate, v
 				}
 
 				resp, err := handler(context.Background(), req)
-
-				spew.Dump(resp, err)
 
 				if err != nil {
 					return []reflect.Value{rv.Elem(), reflect.ValueOf(err)}

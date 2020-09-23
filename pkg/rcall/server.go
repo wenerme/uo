@@ -33,7 +33,7 @@ type serviceMethod struct {
 	NeedContext  bool
 }
 
-func (svc *service) call(server *Server, req *RemoteCallRequest, resp *RemoteCallResponse, method *serviceMethod) {
+func (svc *service) call(server *Server, req *Request, resp *Response, method *serviceMethod) {
 	f := method.method.Func
 
 	var argv = reflect.ValueOf(req.Argument)
@@ -67,24 +67,24 @@ func (svc *service) call(server *Server, req *RemoteCallRequest, resp *RemoteCal
 	}
 }
 
-func errorOfRemoteCall(err error) *RemoteCallError {
+func errorOfRemoteCall(err error) *Error {
 	if err == nil {
 		return nil
 	}
-	return &RemoteCallError{
+	return &Error{
 		StatusCode: 500,
 		Message:    err.Error(),
 	}
 }
 
-func (svr *Server) ServeRequest(req *RemoteCallRequest) (resp *RemoteCallResponse) {
-	resp = &RemoteCallResponse{}
+func (svr *Server) ServeRequest(req *Request) (resp *Response) {
+	resp = &Response{}
 
 	svc, ok := svr.services[req.Coordinate.ToServicePath()]
 	if !ok {
 		s := fmt.Sprintf("rc.ServeRequest: service %q not found", req.Coordinate.ServiceName)
 		log.Println(s)
-		resp.Error = &RemoteCallError{
+		resp.Error = &Error{
 			StatusCode: http.StatusBadRequest,
 			Message:    s,
 		}
@@ -94,7 +94,7 @@ func (svr *Server) ServeRequest(req *RemoteCallRequest) (resp *RemoteCallRespons
 	if !ok {
 		s := fmt.Sprintf("rc.ServeRequest: service method not found %s.%s()", req.Coordinate.ServiceName, req.MethodName)
 		log.Println(s)
-		resp.Error = &RemoteCallError{
+		resp.Error = &Error{
 			StatusCode: 401,
 			Message:    s,
 		}
@@ -228,6 +228,7 @@ func exractServiceMethod(sm *serviceMethod) error {
 		return fmt.Errorf("rc.Register: return type of method %q is %q, must be error", mname, returnType)
 	}
 
+	return nil
 invalidMethod:
 	return fmt.Errorf("rc.Register: unsupported method %q: %s", mname, mtype.String())
 }

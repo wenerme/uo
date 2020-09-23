@@ -43,7 +43,7 @@ func DecodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 		}
 	}
 
-	req := &rcall.RemoteCallRequest{
+	req := &rcall.Request{
 		Coordinate: rcall.ServiceCoordinate{
 			Group:       vars["group"],
 			Version:     vars["version"],
@@ -58,7 +58,7 @@ func DecodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 }
 
 func EncodeResponse(_ context.Context, rw http.ResponseWriter, res interface{}) error {
-	r, ok := res.(*rcall.RemoteCallResponse)
+	r, ok := res.(*rcall.Response)
 	if !ok {
 		return errors.New("httptrans.EncodeResponse: invalid response type")
 	}
@@ -76,7 +76,7 @@ func EncodeResponse(_ context.Context, rw http.ResponseWriter, res interface{}) 
 }
 
 func EncodeRequest(ctx context.Context, req *http.Request, rcReq interface{}) error {
-	r, ok := rcReq.(*rcall.RemoteCallRequest)
+	r, ok := rcReq.(*rcall.Request)
 	if !ok {
 		return errors.New("rc.EncodeRemoteCallRequest: invalid request type")
 	}
@@ -99,13 +99,13 @@ func EncodeRequest(ctx context.Context, req *http.Request, rcReq interface{}) er
 }
 
 func DecodeResponse(ctx context.Context, resp *http.Response) (response interface{}, err error) {
-	r := &rcall.RemoteCallResponse{
+	r := &rcall.Response{
 		Context: ctx,
 	}
 	r.RequestID = resp.Header.Get(headerXRequestID)
 
 	if resp.StatusCode >= 400 {
-		r.Error = &rcall.RemoteCallError{
+		r.Error = &rcall.Error{
 			StatusCode: resp.StatusCode,
 			Message:    resp.Status,
 		}

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-kit/kit/endpoint"
+
 	"github.com/wenerme/uo/pkg/rcall/httptrans"
 
 	"github.com/davecgh/go-spew/spew"
@@ -42,7 +44,9 @@ func TestSimpleCall(t *testing.T) {
 			Handler: handler,
 			Addr:    fmt.Sprintf(":%d", port),
 		}
-		go assert.NoError(t, httpServer.ListenAndServe())
+		go func() {
+			_ = httpServer.ListenAndServe()
+		}()
 	}
 
 	{
@@ -56,14 +60,14 @@ func TestSimpleCall(t *testing.T) {
 
 		client := &StringServiceClient{}
 
-		assert.NoError(t, rcall.MakeRPCCallClient(func(ctx context.Context, request *rcall.RemoteCallRequest) (response *rcall.RemoteCallResponse, err error) {
+		assert.NoError(t, rcall.MakeRPCCallClient(func(ctx context.Context, request *rcall.Request) (response *rcall.Response, err error) {
 			r, err := ep(ctx, request)
 			if err != nil {
 				log.Printf("Call failed %v", err)
 				spew.Dump(r, err)
 				return nil, err
 			}
-			return r.(*rcall.RemoteCallResponse), err
+			return r.(*rcall.Response), err
 		}, rcall.ServiceCoordinate{
 			ServiceName: "StringService",
 			PackageName: "com.example.test",
@@ -87,12 +91,12 @@ func makeTestServer() *httptransport.Server {
 	options := []httptransport.ServerOption{
 		httptransport.ServerBefore(httptrans.MakeRequestDumper(nil)),
 	}
+	ep := rcall.MakeServerEndpoint(svr)
+
+	ep = endpoint.Chain(rcall.LogInvokeMiddleware())(ep)
+
 	handler := httptransport.NewServer(
-		func(_ context.Context, request interface{}) (interface{}, error) {
-			r := request.(*rcall.RemoteCallRequest)
-			res := svr.ServeRequest(r)
-			return res, nil
-		},
+		ep,
 		httptrans.DecodeRequest,
 		httptrans.EncodeResponse,
 		options...,

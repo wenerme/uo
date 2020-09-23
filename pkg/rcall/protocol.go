@@ -44,7 +44,7 @@ func (sc ServiceCoordinate) ServiceTypeName() string {
 	return sc.ServiceName
 }
 
-type RemoteCallRequest struct {
+type Request struct {
 	Coordinate ServiceCoordinate
 
 	RequestID  string
@@ -57,23 +57,23 @@ type RemoteCallRequest struct {
 	// Response *RemoteCallResponse
 }
 
-type RemoteCallResponse struct {
+type Response struct {
 	RequestID string `json:"requestId"`
 	Reply     interface{}
 	// GetReply  func(ptr interface{}) error
 
-	Error *RemoteCallError
+	Error *Error
 
 	Context context.Context
 }
 
-type RemoteCallError struct {
+type Error struct {
 	StatusCode int    `json:"statusCode"`
 	ErrorCode  string `json:"code"`
 	Message    string `json:"message"`
 }
 
-func (e RemoteCallError) Error() string {
+func (e Error) Error() string {
 	ec := e.ErrorCode
 	if ec == "" {
 		ec = strconv.Itoa(e.StatusCode)
