@@ -1,4 +1,4 @@
-package rcall
+package srpc
 
 import (
 	"context"
@@ -7,12 +7,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type RemoteCallHandlerFunc func(ctx context.Context, request *Request) (response *Response, err error)
-
 var nilError = reflect.Zero(reflect.TypeOf((*error)(nil)).Elem())
 
 // MakeRPCCallClient can make a struct as a rpc client, the method is defined as fields
-func MakeRPCCallClient(handler RemoteCallHandlerFunc, coord ServiceCoordinate, v interface{}) error {
+func MakeRPCCallClient(handler HandlerFunc, coord ServiceCoordinate, v interface{}) error {
 	val := reflect.ValueOf(v)
 	typ := val.Type().Elem()
 

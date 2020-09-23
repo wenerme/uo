@@ -13,14 +13,14 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	kitlog "github.com/go-kit/kit/log"
 
-	"github.com/wenerme/uo/pkg/rcall/httptrans"
+	"github.com/wenerme/uo/pkg/srpc/httptrans"
 
 	"github.com/davecgh/go-spew/spew"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/wenerme/uo/pkg/rcall"
+	"github.com/wenerme/uo/pkg/srpc"
 )
 
 type StringService struct {
@@ -62,15 +62,15 @@ func TestSimpleCall(t *testing.T) {
 
 		client := &StringServiceClient{}
 
-		assert.NoError(t, rcall.MakeRPCCallClient(func(ctx context.Context, request *rcall.Request) (response *rcall.Response, err error) {
+		assert.NoError(t, srpc.MakeRPCCallClient(func(ctx context.Context, request *srpc.Request) (response *srpc.Response, err error) {
 			r, err := ep(ctx, request)
 			if err != nil {
 				log.Printf("Call failed %v", err)
 				spew.Dump(r, err)
 				return nil, err
 			}
-			return r.(*rcall.Response), err
-		}, rcall.ServiceCoordinate{
+			return r.(*srpc.Response), err
+		}, srpc.ServiceCoordinate{
 			ServiceName: "StringService",
 			PackageName: "com.example.test",
 		}, client))
@@ -82,10 +82,10 @@ func TestSimpleCall(t *testing.T) {
 }
 
 func makeTestServer() *httptransport.Server {
-	svr := rcall.NewServer()
-	svr.MustRegister(rcall.ServiceRegisterConf{
+	svr := srpc.NewServer()
+	svr.MustRegister(srpc.ServiceRegisterConf{
 		Target: &StringService{},
-		Coordinate: rcall.ServiceCoordinate{
+		Coordinate: srpc.ServiceCoordinate{
 			PackageName: "com.example.test",
 		},
 	})
@@ -93,9 +93,9 @@ func makeTestServer() *httptransport.Server {
 	options := []httptransport.ServerOption{
 		httptransport.ServerBefore(httptrans.MakeRequestDumper(nil)),
 	}
-	ep := rcall.MakeServerEndpoint(svr)
+	ep := srpc.MakeServerEndpoint(svr)
 	logger := kitlog.NewLogfmtLogger(os.Stdout)
-	ep = endpoint.Chain(rcall.LogInvokeMiddleware(logger))(ep)
+	ep = endpoint.Chain(srpc.InvokeLoggingMiddleware(logger))(ep)
 
 	handler := httptransport.NewServer(
 		ep,

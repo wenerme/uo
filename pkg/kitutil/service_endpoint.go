@@ -23,7 +23,7 @@ func MakeServiceEndpointContext(conf ServiceEndpointConf) (*ServiceEndpointConte
 	ctx := &ServiceEndpointContext{}
 
 	if node.ConsulSdClient != nil && conf.ConsulService != nil {
-		consulsd.NewRegistrar(node.ConsulSdClient, conf.ConsulService, log.With(logger, "component", "consul-registrar"))
+		ctx.Registrar = consulsd.NewRegistrar(node.ConsulSdClient, conf.ConsulService, log.With(logger, "component", "consul-registrar"))
 	}
 
 	return ctx, nil

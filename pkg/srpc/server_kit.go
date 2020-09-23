@@ -1,4 +1,4 @@
-package rcall
+package srpc
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func MakeServerEndpoint(svr *Server) endpoint.Endpoint {
 	}
 }
 
-func LogInvokeMiddleware(logger log.Logger) endpoint.Middleware {
+func InvokeLoggingMiddleware(logger log.Logger) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
 			r, ok := request.(*Request)
@@ -48,5 +48,30 @@ func LogInvokeMiddleware(logger log.Logger) endpoint.Middleware {
 
 			return res, err
 		}
+	}
+}
+
+func EndpointOfHandlerFunc(f HandlerFunc) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		r, ok := request.(*Request)
+		if !ok {
+			return nil, fmt.Errorf("srpc.EndpointOfHandlerFunc: invalid request type %T", request)
+		}
+
+		return f(ctx, r)
+	}
+}
+func HandlerFuncOfEndpoint(f endpoint.Endpoint) HandlerFunc {
+	return func(ctx context.Context, request *Request) (*Response, error) {
+		resp, err := f(ctx, request)
+		if err != nil {
+			return nil, err
+		}
+
+		r, ok := resp.(*Response)
+		if !ok {
+			return nil, fmt.Errorf("srpc.HandlerFuncOfEndpoint: invalid response type %T", resp)
+		}
+		return r, nil
 	}
 }

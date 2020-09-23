@@ -11,10 +11,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/wenerme/uo/pkg/srpc"
+
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
-
-	"github.com/wenerme/uo/pkg/rcall"
 )
 
 const headerXRequestID = "X-Request-Id"
@@ -44,8 +44,8 @@ func DecodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 		}
 	}
 
-	req := &rcall.Request{
-		Coordinate: rcall.ServiceCoordinate{
+	req := &srpc.Request{
+		Coordinate: srpc.ServiceCoordinate{
 			Group:       vars["group"],
 			Version:     vars["version"],
 			ServiceName: vars["service"],
@@ -59,7 +59,7 @@ func DecodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 }
 
 func EncodeResponse(_ context.Context, rw http.ResponseWriter, res interface{}) error {
-	r, ok := res.(*rcall.Response)
+	r, ok := res.(*srpc.Response)
 	if !ok {
 		return errors.New("httptrans.EncodeResponse: invalid response type")
 	}
@@ -76,10 +76,10 @@ func EncodeResponse(_ context.Context, rw http.ResponseWriter, res interface{}) 
 	return jsoniter.NewEncoder(rw).Encode(r.Reply)
 }
 
-func EncodeRequest(ctx context.Context, req *http.Request, rcReq interface{}) error {
-	r, ok := rcReq.(*rcall.Request)
+func EncodeRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	r, ok := request.(*srpc.Request)
 	if !ok {
-		return errors.New("rc.EncodeRemoteCallRequest: invalid request type")
+		return fmt.Errorf("rc.EncodeRemoteCallRequest: invalid request type %T", request)
 	}
 	// fixme
 	prefix := DefaultPrefix
@@ -101,13 +101,13 @@ func EncodeRequest(ctx context.Context, req *http.Request, rcReq interface{}) er
 }
 
 func DecodeResponse(ctx context.Context, resp *http.Response) (response interface{}, err error) {
-	r := &rcall.Response{
+	r := &srpc.Response{
 		Context: ctx,
 	}
 	r.RequestID = resp.Header.Get(headerXRequestID)
 
 	if resp.StatusCode >= 400 {
-		r.Error = &rcall.Error{
+		r.Error = &srpc.Error{
 			StatusCode: resp.StatusCode,
 			Message:    resp.Status,
 		}
@@ -125,7 +125,7 @@ func DecodeResponse(ctx context.Context, resp *http.Response) (response interfac
 }
 
 func ErrorEncoder(_ context.Context, err error, w http.ResponseWriter) {
-	e := rcall.ErrorOf(err)
+	e := srpc.ErrorOf(err)
 	w.WriteHeader(e.StatusCode)
 	ee := jsoniter.NewEncoder(w).Encode(e)
 	if ee != nil {

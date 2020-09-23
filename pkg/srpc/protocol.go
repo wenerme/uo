@@ -1,10 +1,12 @@
-package rcall
+package srpc
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 )
+
+type HandlerFunc func(ctx context.Context, request *Request) (response *Response, err error)
 
 var DefaultGroup = "default"
 var DefaultVersion = "1.0.0"

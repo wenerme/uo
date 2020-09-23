@@ -1,4 +1,4 @@
-package rcall
+package srpc
 
 import (
 	"errors"
