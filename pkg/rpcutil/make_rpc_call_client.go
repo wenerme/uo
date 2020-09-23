@@ -9,8 +9,8 @@ var nilError = reflect.Zero(reflect.TypeOf((*error)(nil)).Elem())
 // ClientCallHandler same as net/rpc client.Call
 type ClientCallHandler func(serviceMethod string, args interface{}, reply interface{}) error
 
-// MakeCallClient can make a struct as a rpc client, the method is defined as fields
-func MakeCallClient(handler ClientCallHandler, serviceName string, v interface{}) error {
+// MakeRPCCallClient can make a struct as a rpc client, the method is defined as fields
+func MakeRPCCallClient(handler ClientCallHandler, serviceName string, v interface{}) error {
 	val := reflect.ValueOf(v)
 	typ := val.Type().Elem()
 

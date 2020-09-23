@@ -59,7 +59,7 @@ func TestMakeCallClient(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.NoError(t, rpcutil.MakeCallClient(client.Call, "Arith", c))
+	assert.NoError(t, rpcutil.MakeRPCCallClient(client.Call, "Arith", c))
 
 	{
 		rel, err := c.Multiply(&Args{A: 10, B: 2})
