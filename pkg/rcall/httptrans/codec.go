@@ -26,7 +26,8 @@ func DecodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 
 	if vars["service"] == "" {
 		p := r.URL.Path
-		prefix := "/api/service"
+		// fixme
+		prefix := DefaultPrefix
 		if strings.HasPrefix(p, prefix) {
 			m := regCall.FindStringSubmatch(p[len(prefix):])
 
@@ -81,7 +82,8 @@ func EncodeRequest(ctx context.Context, req *http.Request, rcReq interface{}) er
 		return errors.New("rc.EncodeRemoteCallRequest: invalid request type")
 	}
 	// fixme
-	req.URL.Path = fmt.Sprintf("/api/service/%s/call/%s", r.Coordinate.ToServicePath(), r.MethodName)
+	prefix := DefaultPrefix
+	req.URL.Path = fmt.Sprintf("%s/%s/call/%s", prefix, r.Coordinate.ToServicePath(), r.MethodName)
 
 	if r.RequestID != "" {
 		req.Header.Set(headerXRequestID, r.RequestID)
@@ -120,4 +122,13 @@ func DecodeResponse(ctx context.Context, resp *http.Response) (response interfac
 	}
 
 	return r, nil
+}
+
+func ErrorEncoder(_ context.Context, err error, w http.ResponseWriter) {
+	e := rcall.ErrorOf(err)
+	w.WriteHeader(e.StatusCode)
+	ee := jsoniter.NewEncoder(w).Encode(e)
+	if ee != nil {
+		log.Printf("httptrans.ErrorEncoder: failed to encode error %s", ee)
+	}
 }

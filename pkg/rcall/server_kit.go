@@ -3,10 +3,10 @@ package rcall
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/go-kit/kit/log"
 )
 
 func MakeServerEndpoint(svr *Server) endpoint.Endpoint {
@@ -23,30 +23,30 @@ func MakeServerEndpoint(svr *Server) endpoint.Endpoint {
 	}
 }
 
-func LogInvokeMiddleware() endpoint.Middleware {
+func LogInvokeMiddleware(logger log.Logger) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			if r, ok := request.(*Request); ok {
-				st := time.Now()
-				res, err := next(ctx, request)
-				duration := time.Since(st)
-				s := fmt.Sprintf("Invoke %s.%s %s/%s - %s ",
-					r.Coordinate.ServiceTypeName(), r.MethodName, r.Coordinate.Group, r.Coordinate.Version, duration)
-				if err == nil {
-					if resp, ok := res.(*Response); ok && resp.Error != nil {
-						err = resp.Error
-					}
-				}
-				if err != nil {
-					s += fmt.Sprintf("ERROR %v", err)
-				} else {
-					s += "OK"
-				}
-				log.Println(s)
-				return res, err
+			r, ok := request.(*Request)
+			if !ok {
+				return next(ctx, request)
 			}
 
-			return next(ctx, request)
+			st := time.Now()
+			res, err := next(ctx, request)
+			duration := time.Since(st)
+
+			if err == nil {
+				if resp, ok := res.(*Response); ok && resp.Error != nil {
+					err = resp.Error
+				}
+			}
+
+			_ = logger.Log("service", r.Coordinate.ServiceTypeName(), "method", r.MethodName,
+				"group", r.Coordinate.Group, "version", r.Coordinate.Version,
+				"time", duration, "err", err,
+			)
+
+			return res, err
 		}
 	}
 }

@@ -80,3 +80,16 @@ func (e Error) Error() string {
 	}
 	return fmt.Sprintf("[%v/%v]: %s", ec, e.StatusCode, e.Message)
 }
+
+func ErrorOf(err error) *Error {
+	if err == nil {
+		return nil
+	}
+	if e, ok := err.(*Error); ok {
+		return e
+	}
+	return &Error{
+		StatusCode: 500,
+		Message:    err.Error(),
+	}
+}

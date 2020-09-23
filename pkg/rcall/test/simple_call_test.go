@@ -6,10 +6,12 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/go-kit/kit/endpoint"
+	kitlog "github.com/go-kit/kit/log"
 
 	"github.com/wenerme/uo/pkg/rcall/httptrans"
 
@@ -92,8 +94,8 @@ func makeTestServer() *httptransport.Server {
 		httptransport.ServerBefore(httptrans.MakeRequestDumper(nil)),
 	}
 	ep := rcall.MakeServerEndpoint(svr)
-
-	ep = endpoint.Chain(rcall.LogInvokeMiddleware())(ep)
+	logger := kitlog.NewLogfmtLogger(os.Stdout)
+	ep = endpoint.Chain(rcall.LogInvokeMiddleware(logger))(ep)
 
 	handler := httptransport.NewServer(
 		ep,
