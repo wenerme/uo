@@ -65,12 +65,12 @@ var callCmd = &cobra.Command{
 				httptransport.ClientAfter(srpchttp.MakeClientResponseDumper(nil)),
 			},
 		})
-
+		coordinate := pingapi.PingServiceClient{}.ServiceCoordinate()
 		if node.ConsulClient != nil {
 			clientCtx, err := kitutil.MakeClientEndpointContext(kitutil.ClientEndpointConf{
 				Node:             node,
 				Factory:          factory,
-				InstancerService: "services.me.wener.demo.PingService",
+				InstancerService: "services." + coordinate.ServiceTypeName(),
 			})
 			if err != nil {
 				panic(err)
@@ -96,10 +96,7 @@ var callCmd = &cobra.Command{
 		}
 
 		method := callConf.Method
-		cli := srpc.NewClient(hfunc, srpc.ServiceCoordinate{
-			ServiceName: "PingService",
-			PackageName: "me.wener.demo",
-		})
+		cli := srpc.NewClient(hfunc, client.ServiceCoordinate())
 		var reply interface{}
 		err := cli.Call(context.Background(), method, callConf.Arg, &reply)
 		fmt.Printf("Method: %s\nArgument: %v\nError: %v\nReply: %v\n", method, callConf.Arg, err, reply)

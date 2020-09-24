@@ -4,6 +4,8 @@ import (
 	"context"
 	stdlog "log"
 	"strings"
+
+	"github.com/wenerme/uo/pkg/srpc"
 )
 
 type StringService struct {
@@ -56,4 +58,16 @@ type StringServiceClient struct {
 	JoinPtr      func(r *StringPart) (string, error)
 	Sep          func(r string) (StringPart, error)
 	SepPtr       func(r string) (*StringPart, error)
+}
+
+var stringServiceCoordinate = srpc.ServiceCoordinate{
+	ServiceName: "StringService",
+	PackageName: "me.wener.test",
+}
+
+func (s StringServiceClient) ServiceCoordinate() srpc.ServiceCoordinate {
+	return stringServiceCoordinate
+}
+func (s StringService) ServiceCoordinate() srpc.ServiceCoordinate {
+	return stringServiceCoordinate
 }

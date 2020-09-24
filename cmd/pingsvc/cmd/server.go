@@ -72,13 +72,11 @@ var serverCmd = &cobra.Command{
 		_ = node.Logger.Log("msg", "consul leader", "leader", leader, "err", err)
 
 		server := srpc.NewServer()
-		coordinate := srpc.ServiceCoordinate{
-			ServiceName: "PingService",
-			PackageName: "me.wener.demo",
-		}.Normalize()
+
+		pingService := &pingapi.PingService{}
+		coordinate := pingService.ServiceCoordinate()
 		server.MustRegister(srpc.ServiceRegisterConf{
-			Target:     &pingapi.PingService{},
-			Coordinate: coordinate,
+			Target: pingService,
 		})
 		ep := srpc.MakeServerEndpoint(server)
 		ep = srpc.InvokeLoggingMiddleware(kitlog.With(node.Logger, "server", "invoke"))(ep)

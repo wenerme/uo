@@ -12,7 +12,7 @@ func MakeRPCCallClient(handler HandlerFunc, coord ServiceCoordinate, v interface
 	val := reflect.ValueOf(v)
 	typ := val.Type().Elem()
 
-	coord = coord.Normalize()
+	coord = GetCoordinate(v, coord)
 
 	for i := 0; i < typ.NumField(); i++ {
 		f := typ.Field(i)

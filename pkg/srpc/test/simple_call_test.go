@@ -57,10 +57,7 @@ func TestSimpleCall(t *testing.T) {
 		StringServiceClientSpec(t, stringSvcClient)
 
 		echoSvcClient := &EchoServiceClient{}
-		assert.NoError(t, srpc.MakeRPCCallClient(srpc.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{
-			ServiceName: "EchoService",
-			PackageName: "com.example.test",
-		}, echoSvcClient))
+		assert.NoError(t, srpc.MakeRPCCallClient(srpc.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{}, echoSvcClient))
 
 		EchoServiceClientSpec(t, echoSvcClient)
 	}
@@ -99,9 +96,6 @@ func makeTestServer() *httptransport.Server {
 
 	svr.MustRegister(srpc.ServiceRegisterConf{
 		Target: &EchoService{},
-		Coordinate: srpc.ServiceCoordinate{
-			PackageName: "com.example.test",
-		},
 	})
 
 	options := []httptransport.ServerOption{
