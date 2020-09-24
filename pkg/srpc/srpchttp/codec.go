@@ -54,8 +54,11 @@ func DecodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 		MethodName: vars["method"],
 		Context:    ctx,
 	}
-
-	return req, jsoniter.NewDecoder(r.Body).Decode(&req.Argument)
+	req.GetArgument = func(out interface{}) error {
+		return jsoniter.NewDecoder(r.Body).Decode(out)
+	}
+	// return req, jsoniter.NewDecoder(r.Body).Decode(&req.Argument)
+	return req, nil
 }
 
 func EncodeResponse(_ context.Context, rw http.ResponseWriter, res interface{}) error {
@@ -117,8 +120,8 @@ func DecodeResponse(ctx context.Context, resp *http.Response) (response interfac
 		return nil, r.Error
 	}
 
-	if err = jsoniter.NewDecoder(resp.Body).Decode(&r.Reply); err != nil {
-		return nil, err
+	r.GetReply = func(out interface{}) error {
+		return jsoniter.NewDecoder(resp.Body).Decode(out)
 	}
 
 	return r, nil

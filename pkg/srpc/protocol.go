@@ -3,7 +3,6 @@ package srpc
 import (
 	"context"
 	"fmt"
-	"strconv"
 )
 
 type HandlerFunc func(ctx context.Context, request *Request) (response *Response, err error)
@@ -52,8 +51,10 @@ type Request struct {
 	RequestID  string
 	MethodName string
 
+	// Client use Argument to pass argument to server
 	Argument interface{}
-	// GetArgument func(argv reflect.Value) (error)
+	// Server use GetArgument to get target typed replay
+	GetArgument func(out interface{}) error
 
 	Context context.Context
 	// Response *RemoteCallResponse
@@ -61,8 +62,10 @@ type Request struct {
 
 type Response struct {
 	RequestID string `json:"requestId"`
-	Reply     interface{}
-	// GetReply  func(ptr interface{}) error
+	// Server use Reply to return the response to client
+	Reply interface{}
+	// Client use GetReply to get target typed replay
+	GetReply func(out interface{}) error
 
 	Error *Error
 
@@ -71,14 +74,14 @@ type Response struct {
 
 type Error struct {
 	StatusCode int    `json:"statusCode"`
-	ErrorCode  string `json:"code"`
+	ErrorCode  int    `json:"code"`
 	Message    string `json:"message"`
 }
 
 func (e Error) Error() string {
 	ec := e.ErrorCode
-	if ec == "" {
-		ec = strconv.Itoa(e.StatusCode)
+	if ec == 0 {
+		ec = e.StatusCode
 	}
 	return fmt.Sprintf("[%v/%v]: %s", ec, e.StatusCode, e.Message)
 }

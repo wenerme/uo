@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/consul/api v1.3.0
 	github.com/json-iterator/go v1.1.10
+	github.com/magiconair/properties v1.8.1
 	github.com/mitchellh/go-homedir v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/spf13/cobra v0.0.3

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/go-kit/kit/endpoint"
@@ -22,17 +21,6 @@ import (
 
 	"github.com/wenerme/uo/pkg/srpc"
 )
-
-type StringService struct {
-}
-
-func (*StringService) Uppercase(s string) (string, error) {
-	return strings.ToUpper(s), nil
-}
-
-type StringServiceClient struct {
-	Uppercase func(string) (string, error)
-}
 
 func TestSimpleCall(t *testing.T) {
 	port := 8123
@@ -75,9 +63,7 @@ func TestSimpleCall(t *testing.T) {
 			PackageName: "com.example.test",
 		}, client))
 
-		reply, err := client.Uppercase("a")
-		assert.NoError(t, err)
-		assert.Equal(t, "A", reply)
+		StringServiceClientSpec(t, client)
 	}
 }
 

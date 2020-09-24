@@ -9,6 +9,11 @@ import (
 	"reflect"
 )
 
+const (
+	ErrCodeServiceNotFound = 50001 + iota
+	ErrCodeMethodNotFound
+)
+
 type Server struct {
 	services map[string]*service
 }
@@ -29,16 +34,40 @@ type serviceMethod struct {
 	ArgType   reflect.Type
 	ReplyType reflect.Type
 
+	NeedContext bool
+	// NeedArg      bool
 	NeedReplyArg bool
-	NeedContext  bool
 }
 
 func (svc *service) call(server *Server, req *Request, resp *Response, method *serviceMethod) {
 	f := method.method.Func
 
-	var argv = reflect.ValueOf(req.Argument)
+	args := []reflect.Value{svc.recv}
+	if method.NeedContext {
+		args = append(args, reflect.ValueOf(req.Context))
+	}
 
-	args := []reflect.Value{svc.recv, argv}
+	var argv reflect.Value
+	{
+		isPtr := method.ArgType.Kind() == reflect.Ptr
+		if isPtr {
+			argv = reflect.New(method.ArgType.Elem())
+		} else {
+			argv = reflect.New(method.ArgType)
+		}
+		if err := req.GetArgument(argv.Interface()); err != nil {
+			log.Printf("srpc.service.call: GetArgument failed %v", err)
+			resp.Error = errorOfRemoteCall(err)
+			return
+		}
+		//
+		if !isPtr {
+			argv = argv.Elem()
+		}
+	}
+
+	args = append(args, argv)
+
 	if method.NeedReplyArg {
 		replyv := reflect.New(method.ReplyType.Elem())
 		switch method.ReplyType.Elem().Kind() {
@@ -48,10 +77,6 @@ func (svc *service) call(server *Server, req *Request, resp *Response, method *s
 			replyv.Elem().Set(reflect.MakeSlice(method.ReplyType.Elem(), 0, 0))
 		}
 		args = append(args, replyv)
-	}
-
-	if method.NeedContext {
-		args = append(args, reflect.ValueOf(req.Context))
 	}
 
 	ret := f.Call(args)
@@ -86,18 +111,21 @@ func (svr *Server) ServeRequest(req *Request) (resp *Response) {
 		log.Println(s)
 		resp.Error = &Error{
 			StatusCode: http.StatusBadRequest,
+			ErrorCode:  ErrCodeServiceNotFound,
 			Message:    s,
 		}
 		return
 	}
 	method, ok := svc.methods[req.MethodName]
 	if !ok {
-		s := fmt.Sprintf("rc.ServeRequest: service method not found %s.%s()", req.Coordinate.ServiceName, req.MethodName)
+		s := fmt.Sprintf("rc.ServeRequest: method not found %s.%s()", req.Coordinate.ServiceName, req.MethodName)
 		log.Println(s)
 		resp.Error = &Error{
-			StatusCode: 401,
+			StatusCode: http.StatusBadRequest,
+			ErrorCode:  ErrCodeMethodNotFound,
 			Message:    s,
 		}
+		return
 	}
 
 	svc.call(svr, req, resp, method)

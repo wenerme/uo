@@ -21,9 +21,9 @@ type ClientEndpointConf struct {
 	Node    *NodeContext
 	Factory sd.Factory
 
-	Instancer        bool
-	InstancerService string
-	InstancerTags    []string
+	InstancerDisabled bool
+	InstancerService  string
+	InstancerTags     []string
 	// Health only
 	InstancerPassingOnly bool
 
@@ -52,7 +52,7 @@ func MakeClientEndpointContext(conf ClientEndpointConf) (*ClientEndpointContext,
 	ctx := &ClientEndpointContext{}
 
 	// consul
-	if node.ConsulSdClient != nil && conf.Instancer {
+	if node.ConsulSdClient != nil && !conf.InstancerDisabled {
 		ctx.ConsulInstancer = consulsd.NewInstancer(node.ConsulSdClient, log.With(logger, "component", "consul-instancer"), conf.InstancerService, conf.InstancerTags, conf.InstancerPassingOnly)
 	}
 	if ctx.ConsulInstancer != nil && ctx.Instancer == nil {
@@ -75,16 +75,18 @@ func MakeClientEndpointContext(conf ClientEndpointConf) (*ClientEndpointContext,
 		}
 	}
 
+	// use -1 to opt out
+	if conf.RetryMax == 0 && conf.RetryCallback == nil {
+		conf.RetryMax = 3
+	}
+	if conf.RetryTimeout == 0 && (conf.RetryMax > 0 || conf.RetryCallback != nil) {
+		conf.RetryTimeout = time.Minute
+	}
+
 	if ctx.Balancer != nil && conf.RetryMax > 0 {
-		if conf.RetryTimeout == 0 {
-			conf.RetryTimeout = time.Minute
-		}
 		ctx.Endpoint = lb.Retry(conf.RetryMax, conf.RetryTimeout, ctx.Balancer)
 	}
-	if ctx.Balancer != nil && conf.RetryMax == 0 && conf.RetryCallback != nil {
-		if conf.RetryTimeout == 0 {
-			conf.RetryTimeout = time.Minute
-		}
+	if ctx.Balancer != nil && conf.RetryCallback != nil {
 		ctx.Endpoint = lb.RetryWithCallback(conf.RetryTimeout, ctx.Balancer, conf.RetryCallback)
 	}
 
