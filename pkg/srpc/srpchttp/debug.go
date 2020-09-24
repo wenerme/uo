@@ -33,7 +33,7 @@ func MakeRequestDumper(opt *DumperOptions) httptransport.RequestFunc {
 				opt.OnError(err)
 			}
 		} else {
-			log.Println(string(d))
+			log.Println("Request\n" + string(d))
 		}
 		return ctx
 	}
@@ -50,7 +50,7 @@ func MakeClientResponseDumper(opt *DumperOptions) httptransport.ClientResponseFu
 				opt.OnError(err)
 			}
 		} else {
-			log.Println(string(d))
+			log.Println("Response\n" + string(d))
 		}
 		return ctx
 	}

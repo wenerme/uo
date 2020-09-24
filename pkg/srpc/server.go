@@ -29,13 +29,15 @@ type service struct {
 	recv    reflect.Value
 	methods map[string]*serviceMethod
 }
+
+// metadata of service's method
 type serviceMethod struct {
 	method    reflect.Method
 	ArgType   reflect.Type
 	ReplyType reflect.Type
 
-	NeedContext bool
-	// NeedArg      bool
+	NeedContext  bool
+	NeedArg      bool
 	NeedReplyArg bool
 }
 
@@ -47,8 +49,8 @@ func (svc *service) call(server *Server, req *Request, resp *Response, method *s
 		args = append(args, reflect.ValueOf(req.Context))
 	}
 
-	var argv reflect.Value
-	{
+	if method.NeedArg {
+		var argv reflect.Value
 		isPtr := method.ArgType.Kind() == reflect.Ptr
 		if isPtr {
 			argv = reflect.New(method.ArgType.Elem())
@@ -64,9 +66,8 @@ func (svc *service) call(server *Server, req *Request, resp *Response, method *s
 		if !isPtr {
 			argv = argv.Elem()
 		}
+		args = append(args, argv)
 	}
-
-	args = append(args, argv)
 
 	if method.NeedReplyArg {
 		replyv := reflect.New(method.ReplyType.Elem())
@@ -82,7 +83,11 @@ func (svc *service) call(server *Server, req *Request, resp *Response, method *s
 	ret := f.Call(args)
 
 	if method.NeedReplyArg {
-		resp.Reply = args[2].Interface()
+		if method.NeedContext {
+			resp.Reply = args[3].Interface()
+		} else {
+			resp.Reply = args[2].Interface()
+		}
 	} else {
 		resp.Reply = ret[0].Interface()
 	}
@@ -181,8 +186,8 @@ var typeOfError = reflect.TypeOf((*error)(nil)).Elem()
 // [ ] func ()(response,error)
 // func (request)(response,error)
 // func (request,*response)(error)
-// func (request,context)(response,error)
-// func (request,*response,context)(error)
+// func (context,request)(response,error)
+// func (context,request,*response)(error)
 func suitableMethods(typ reflect.Type, reportErr bool) map[string]*serviceMethod {
 	methods := make(map[string]*serviceMethod)
 
@@ -221,27 +226,29 @@ func exractServiceMethod(sm *serviceMethod) error {
 	if !(numIn > 1 && numOut >= 1) {
 		goto invalidMethod
 	}
-
+	sm.NeedArg = true
 	switch {
 	// func (request)(response,error)
 	case numIn == 2 && numOut == 2:
 		sm.ArgType = mtype.In(1)
 		sm.ReplyType = mtype.Out(0)
+
 	// func (request,*response)(error)
 	case numIn == 3 && numOut == 1:
 		sm.ArgType = mtype.In(1)
 		sm.ReplyType = mtype.In(2)
 		sm.NeedReplyArg = true
-	// func (request,context)(response,error)
+
+	// func (context,request)(response,error)
 	case numIn == 3 && numOut == 2:
-		sm.ArgType = mtype.In(1)
+		sm.ArgType = mtype.In(2)
 		sm.ReplyType = mtype.In(2)
 		sm.NeedContext = true
 
-	// func (request,*response,context)(error)
+	// func (context,request,*response)(error)
 	case numIn == 4 && numOut == 1:
-		sm.ArgType = mtype.In(1)
-		sm.ReplyType = mtype.Out(0)
+		sm.ArgType = mtype.In(2)
+		sm.ReplyType = mtype.In(3)
 		sm.NeedReplyArg = true
 		sm.NeedContext = true
 	default:

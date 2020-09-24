@@ -1,6 +1,10 @@
 package test
 
-import "strings"
+import (
+	"context"
+	stdlog "log"
+	"strings"
+)
 
 type StringService struct {
 }
@@ -13,17 +17,24 @@ type StringPart struct {
 func (*StringService) Uppercase(s string) (string, error) {
 	return strings.ToUpper(s), nil
 }
-func (*StringService) UppercasePtr(s *string) (string, error) {
+func (*StringService) UppercasePtr(ctx context.Context, s *string) (string, error) {
+	if ctx == nil {
+		stdlog.Fatal("nil context")
+	}
 	return strings.ToUpper(*s), nil
 }
 func (*StringService) Join(r StringPart) (string, error) {
 	return r.A + r.Sep + r.B, nil
 }
-func (s *StringService) JoinPtr(r *StringPart) (string, error) {
+func (s *StringService) JoinPtr(ctx context.Context, r *StringPart, v *string) error {
+	if ctx == nil {
+		stdlog.Fatal("nil context")
+	}
 	if r == nil {
 		r = &StringPart{}
 	}
-	return s.Join(*r)
+	*v, _ = s.Join(*r)
+	return nil
 }
 func (*StringService) Sep(r string) (StringPart, error) {
 	sep := strings.SplitN(r, ".", 2)
