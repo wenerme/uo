@@ -36,11 +36,12 @@ import (
 )
 
 var serverConf struct {
-	HTTPAddress string
-	HTTPBind    string
-	HTTPPort    int
-	AdvertiseIP string
-	Consul      bool
+	HTTPAddress  string
+	HTTPBind     string
+	HTTPPort     int
+	AdvertiseIP  string
+	Consul       bool
+	ConsulNodeID string
 }
 
 // serverCmd represents the server command
@@ -52,6 +53,14 @@ var serverCmd = &cobra.Command{
 		{
 			noConsul, _ := cmd.Flags().GetBool("no-consul")
 			serverConf.Consul = !noConsul
+
+			var p string
+			serverConf.HTTPBind, p, _ = net.SplitHostPort(serverConf.HTTPAddress)
+			serverConf.HTTPPort, _ = strconv.Atoi(p)
+
+			if serverConf.ConsulNodeID == "" {
+				serverConf.ConsulNodeID = fmt.Sprintf("pingsvc-%s-%v", serverConf.AdvertiseIP, serverConf.HTTPPort)
+			}
 		}
 
 		node := kitutil.MustMakeNodeContext(kitutil.NodeConf{
@@ -75,11 +84,10 @@ var serverCmd = &cobra.Command{
 		ep = srpc.InvokeLoggingMiddleware(kitlog.With(node.Logger, "server", "invoke"))(ep)
 		serverHandler := httptransport.NewServer(ep, srpchttp.DecodeRequest, srpchttp.EncodeResponse)
 
-		_, port, _ := net.SplitHostPort(serverConf.HTTPAddress)
-		portN, _ := strconv.Atoi(port)
 		consulService := &consulapi.AgentServiceRegistration{
+			ID:   serverConf.ConsulNodeID,
 			Name: "services." + coordinate.ServiceTypeName(),
-			Port: portN,
+			Port: serverConf.HTTPPort,
 
 			EnableTagOverride: false,
 			Tags: []string{
@@ -96,8 +104,8 @@ var serverCmd = &cobra.Command{
 
 			Checks: consulapi.AgentServiceChecks{
 				&consulapi.AgentServiceCheck{
-					Name:                           "http-health",
-					HTTP:                           fmt.Sprintf("http://127.0.0.1:%v/-/healthy", port),
+					Name:                           serverConf.ConsulNodeID + "-http-health",
+					HTTP:                           fmt.Sprintf("http://127.0.0.1:%v/-/healthy", serverConf.HTTPPort),
 					Interval:                       "15s",
 					DeregisterCriticalServiceAfter: "30s",
 				},
@@ -134,6 +142,7 @@ func init() {
 	rootCmd.AddCommand(serverCmd)
 
 	serverCmd.Flags().StringVar(&serverConf.HTTPAddress, "http-address", "0.0.0.0:8123", "Listen host:port for HTTP endpoints")
-	serverCmd.Flags().StringVar(&serverConf.AdvertiseIP, "advertise-ip", "", "Sets the advertise address to use")
+	serverCmd.Flags().StringVar(&serverConf.AdvertiseIP, "advertise-ip", "127.0.0.1", "Sets the advertise address to use")
+	serverCmd.Flags().StringVar(&serverConf.ConsulNodeID, "consul-node-id", "", "NodeID")
 	serverCmd.Flags().Bool("no-consul", false, "Disable consul")
 }

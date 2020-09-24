@@ -1,20 +1,19 @@
 package test
 
 import (
-	"context"
 	"fmt"
-	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	kitlog "github.com/go-kit/kit/log"
 
 	"github.com/wenerme/uo/pkg/srpc/srpchttp"
 
-	"github.com/davecgh/go-spew/spew"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +22,7 @@ import (
 )
 
 func TestSimpleCall(t *testing.T) {
-	port := 8123
+	port := 8123 + rand.Intn(10000)
 	{
 		handler := makeTestServer()
 
@@ -48,22 +47,44 @@ func TestSimpleCall(t *testing.T) {
 		cli := httptransport.NewClient("POST", u, srpchttp.EncodeRequest, srpchttp.DecodeResponse, options...)
 		ep := cli.Endpoint()
 
-		client := &StringServiceClient{}
+		stringSvcClient := &StringServiceClient{}
 
-		assert.NoError(t, srpc.MakeRPCCallClient(func(ctx context.Context, request *srpc.Request) (response *srpc.Response, err error) {
-			r, err := ep(ctx, request)
-			if err != nil {
-				log.Printf("Call failed %v", err)
-				spew.Dump(r, err)
-				return nil, err
-			}
-			return r.(*srpc.Response), err
-		}, srpc.ServiceCoordinate{
+		assert.NoError(t, srpc.MakeRPCCallClient(srpc.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{
 			ServiceName: "StringService",
 			PackageName: "com.example.test",
-		}, client))
+		}, stringSvcClient))
 
-		StringServiceClientSpec(t, client)
+		StringServiceClientSpec(t, stringSvcClient)
+
+		echoSvcClient := &EchoServiceClient{}
+		assert.NoError(t, srpc.MakeRPCCallClient(srpc.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{
+			ServiceName: "EchoService",
+			PackageName: "com.example.test",
+		}, echoSvcClient))
+
+		EchoServiceClientSpec(t, echoSvcClient)
+	}
+}
+
+func EchoServiceClientSpec(t *testing.T, echoSvcClient *EchoServiceClient) {
+	for _, v := range []interface{}{
+		"a",
+		1,
+		1.1,
+		nil,
+		map[string]interface{}{"Int": 1, "F": 1.1, "S": "ABC"},
+		[]interface{}{"a", "b", "c", 1, 2, 3},
+	} {
+		replay, err := echoSvcClient.Echo(v)
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf("%#v", v), fmt.Sprintf("%#v", replay))
+	}
+
+	{
+		v := time.Now()
+		replay, err := echoSvcClient.EchoTime(v)
+		assert.NoError(t, err)
+		assert.True(t, v.Equal(replay))
 	}
 }
 
@@ -71,6 +92,13 @@ func makeTestServer() *httptransport.Server {
 	svr := srpc.NewServer()
 	svr.MustRegister(srpc.ServiceRegisterConf{
 		Target: &StringService{},
+		Coordinate: srpc.ServiceCoordinate{
+			PackageName: "com.example.test",
+		},
+	})
+
+	svr.MustRegister(srpc.ServiceRegisterConf{
+		Target: &EchoService{},
 		Coordinate: srpc.ServiceCoordinate{
 			PackageName: "com.example.test",
 		},

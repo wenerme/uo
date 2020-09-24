@@ -1,7 +1,6 @@
 package pingapi
 
 import (
-	"context"
 	"fmt"
 	"time"
 )
@@ -15,7 +14,7 @@ func (s *PingService) Ping() string {
 func (s *PingService) Hello(name string) string {
 	return fmt.Sprintf("Hello %s!", name)
 }
-func (s *PingService) Echo(ctx context.Context, v interface{}) (interface{}, error) {
+func (s *PingService) Echo(v interface{}) (interface{}, error) {
 	return v, nil
 }
 func (s *PingService) Now() time.Time {

@@ -9,6 +9,13 @@ type Client struct {
 	coordinate ServiceCoordinate
 }
 
+func NewClient(handler HandlerFunc, coordinate ServiceCoordinate) *Client {
+	return &Client{
+		handler:    handler,
+		coordinate: coordinate,
+	}
+}
+
 func (cli *Client) Call(ctx context.Context, methodName string, arg interface{}, reply interface{}) error {
 	if ctx == nil {
 		ctx = context.Background()
