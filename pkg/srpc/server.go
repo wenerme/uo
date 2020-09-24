@@ -129,7 +129,7 @@ func (svr *Server) register(conf ServiceRegisterConf) error {
 
 	s.typ = typ
 
-	coord := conf.Coordinate
+	coord := conf.Coordinate.Normalize()
 	if coord.ServiceName == "" {
 		coord.ServiceName = typ.Elem().Name()
 	}
@@ -140,7 +140,7 @@ func (svr *Server) register(conf ServiceRegisterConf) error {
 		return errors.New(s)
 	}
 
-	log.Printf("rc.Register: register %s %s v%s", coord.Group, coord.ServiceName, coord.Version)
+	log.Printf("rc.Register: register %s %s v%s", coord.Group, coord.ServiceTypeName(), coord.Version)
 	s.methods = suitableMethods(typ, true)
 
 	svr.services[coord.ToServicePath()] = s

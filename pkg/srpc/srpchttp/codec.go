@@ -1,4 +1,4 @@
-package httptrans
+package srpchttp
 
 import (
 	"bytes"

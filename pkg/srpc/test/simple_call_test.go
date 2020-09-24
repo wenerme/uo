@@ -13,7 +13,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	kitlog "github.com/go-kit/kit/log"
 
-	"github.com/wenerme/uo/pkg/srpc/httptrans"
+	"github.com/wenerme/uo/pkg/srpc/srpchttp"
 
 	"github.com/davecgh/go-spew/spew"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -53,11 +53,11 @@ func TestSimpleCall(t *testing.T) {
 
 	{
 		options := []httptransport.ClientOption{
-			httptransport.ClientBefore(httptrans.MakeRequestDumper(nil)),
-			httptransport.ClientAfter(httptrans.MakeClientResponseDumper(nil)),
+			httptransport.ClientBefore(srpchttp.MakeRequestDumper(nil)),
+			httptransport.ClientAfter(srpchttp.MakeClientResponseDumper(nil)),
 		}
 		u, _ := url.Parse(fmt.Sprintf("http://localhost:%d", port))
-		cli := httptransport.NewClient("POST", u, httptrans.EncodeRequest, httptrans.DecodeResponse, options...)
+		cli := httptransport.NewClient("POST", u, srpchttp.EncodeRequest, srpchttp.DecodeResponse, options...)
 		ep := cli.Endpoint()
 
 		client := &StringServiceClient{}
@@ -91,7 +91,7 @@ func makeTestServer() *httptransport.Server {
 	})
 
 	options := []httptransport.ServerOption{
-		httptransport.ServerBefore(httptrans.MakeRequestDumper(nil)),
+		httptransport.ServerBefore(srpchttp.MakeRequestDumper(nil)),
 	}
 	ep := srpc.MakeServerEndpoint(svr)
 	logger := kitlog.NewLogfmtLogger(os.Stdout)
@@ -99,8 +99,8 @@ func makeTestServer() *httptransport.Server {
 
 	handler := httptransport.NewServer(
 		ep,
-		httptrans.DecodeRequest,
-		httptrans.EncodeResponse,
+		srpchttp.DecodeRequest,
+		srpchttp.EncodeResponse,
 		options...,
 	)
 	return handler

@@ -1,3 +1,3 @@
-package httptrans
+package srpchttp
 
 var DefaultPrefix = "/api/service"
