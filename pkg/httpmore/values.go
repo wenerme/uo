@@ -1,15 +1,5 @@
 package httpmore
 
-func mapStringToSliceString(a map[string]string) map[string][]string {
-	if len(a) == 0 {
-		return nil
-	}
-	m := make(map[string][]string)
-	for k, v := range a {
-		m[k] = []string{v}
-	}
-	return m
-}
 func mergeMapSliceString(a map[string][]string, b map[string][]string) map[string][]string {
 	if len(a) == 0 {
 		return cloneMapSliceString(b)

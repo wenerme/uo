@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/wenerme/uo/querystring"
+
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -49,8 +51,8 @@ func (r RequestInit) Merge(o RequestInit) RequestInit {
 	case o.Query == nil:
 		// keep
 	default:
-		if a, ae := queryValues(r.Query); ae == nil {
-			if b, be := queryValues(o.Query); be == nil {
+		if a, ae := querystring.Values(r.Query); ae == nil {
+			if b, be := querystring.Values(o.Query); be == nil {
 				r.Query = mergeMapSliceString(a, b)
 			} else {
 				stdlog.Printf("httmore.RequestInit.Merge: convert query failed %v", be)
@@ -116,7 +118,7 @@ func (r *RequestInit) GetURL() (string, error) {
 	if strings.HasPrefix(u, "/") {
 		u = r.BaseURL + u
 	}
-	v, err := queryValues(r.Query)
+	v, err := querystring.Values(r.Query)
 	if err != nil {
 		return "", err
 	}

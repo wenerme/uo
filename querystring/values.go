@@ -1,17 +1,19 @@
-package httpmore
+package querystring
 
 import (
 	"fmt"
 	"net/url"
 	"reflect"
 	"time"
+
+	"github.com/google/go-querystring/query"
 )
 
 var timeType = reflect.TypeOf(time.Time{})
 
 // convert non struct to values
 // for struct use https://github.com/google/go-querystring
-func queryValues(v interface{}) (url.Values, error) {
+func Values(v interface{}) (url.Values, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -22,20 +24,33 @@ func queryValues(v interface{}) (url.Values, error) {
 		return mapStringToSliceString(tv), nil
 	}
 	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Struct {
+		return query.Values(v)
+	}
 	if rv.Kind() == reflect.Map {
 		m := make(url.Values)
 		iter := rv.MapRange()
 		for iter.Next() {
 			k := iter.Key()
-			v := iter.Value()
-			sv := reflect.ValueOf(v)
-
+			sv := iter.Value()
+			if sv.Kind() == reflect.Interface {
+				sv = reflect.ValueOf(sv.Interface())
+			}
+			switch sv.Kind() {
+			case
+				reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.UnsafePointer,
+				reflect.Interface, reflect.Slice:
+				if sv.IsNil() {
+					continue
+				}
+			}
+			// no empty check
 			if sv.Kind() == reflect.Slice || sv.Kind() == reflect.Array {
 				for i := 0; i < sv.Len(); i++ {
-					m.Add(fmt.Sprint(k), valueString(sv))
+					m.Add(fmt.Sprint(k.Interface()), valueString(sv.Index(i)))
 				}
 			} else {
-				m.Set(fmt.Sprint(k), valueString(sv))
+				m.Set(fmt.Sprint(k.Interface()), valueString(sv))
 			}
 		}
 		return m, nil
@@ -57,4 +72,15 @@ func valueString(v reflect.Value) string {
 	}
 
 	return fmt.Sprint(v.Interface())
+}
+
+func mapStringToSliceString(a map[string]string) map[string][]string {
+	if len(a) == 0 {
+		return nil
+	}
+	m := make(map[string][]string)
+	for k, v := range a {
+		m[k] = []string{v}
+	}
+	return m
 }
