@@ -8,7 +8,7 @@ import (
 type HandlerFunc func(ctx context.Context, request *Request) (response *Response, err error)
 
 var DefaultGroup = "default"
-var DefaultVersion = "1.0.0"
+var DefaultVersion = "v1.0.0"
 
 type ServiceCoordinate struct {
 	Group   string `json:"group"`

@@ -22,6 +22,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/wenerme/uo/pkg/srpc/srpckit"
+
+	"github.com/wenerme/uo/pkg/srpc/srpcconsul"
+
 	consulapi "github.com/hashicorp/consul/api"
 
 	kitlog "github.com/go-kit/kit/log"
@@ -74,32 +78,18 @@ var serverCmd = &cobra.Command{
 		server := srpc.NewServer()
 
 		pingService := &pingapi.PingService{}
-		coordinate := pingService.ServiceCoordinate()
+		coordinate := srpc.GetCoordinate(pingService, srpc.ServiceCoordinate{})
 		server.MustRegister(srpc.ServiceRegisterConf{
 			Target: pingService,
 		})
-		ep := srpc.MakeServerEndpoint(server)
-		ep = srpc.InvokeLoggingMiddleware(kitlog.With(node.Logger, "server", "invoke"))(ep)
+		ep := srpckit.MakeServerEndpoint(server)
+		ep = srpckit.InvokeLoggingMiddleware(kitlog.With(node.Logger, "server", "invoke"))(ep)
 		serverHandler := httptransport.NewServer(ep, srpchttp.DecodeRequest, srpchttp.EncodeResponse)
 
-		consulService := &consulapi.AgentServiceRegistration{
-			ID:   serverConf.ConsulNodeID,
-			Name: "services." + coordinate.ServiceTypeName(),
-			Port: serverConf.HTTPPort,
-
+		consulService := srpcconsul.SetServiceRegistration(coordinate, &consulapi.AgentServiceRegistration{
+			ID:                serverConf.ConsulNodeID,
+			Port:              serverConf.HTTPPort,
 			EnableTagOverride: false,
-			Tags: []string{
-				"srpc=true",
-				"group=" + coordinate.Group,
-				"version=" + coordinate.Version,
-			},
-			Meta: map[string]string{
-				"group":   coordinate.Group,
-				"service": coordinate.ServiceTypeName(),
-				"version": coordinate.Version,
-				"schema":  `{"methods":[]}`,
-			},
-
 			Checks: consulapi.AgentServiceChecks{
 				&consulapi.AgentServiceCheck{
 					Name:                           serverConf.ConsulNodeID + "-http-health",
@@ -108,7 +98,7 @@ var serverCmd = &cobra.Command{
 					DeregisterCriticalServiceAfter: "30s",
 				},
 			},
-		}
+		})
 
 		sc, err := kitutil.MakeServiceEndpointContext(kitutil.ServiceEndpointConf{
 			Node:          node,

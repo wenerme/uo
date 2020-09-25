@@ -20,6 +20,10 @@ import (
 	"fmt"
 	stdlog "log"
 
+	"github.com/wenerme/uo/pkg/srpc/srpckit"
+
+	"github.com/wenerme/uo/pkg/srpc/srpcconsul"
+
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/spf13/cobra"
@@ -65,12 +69,14 @@ var callCmd = &cobra.Command{
 				httptransport.ClientAfter(srpchttp.MakeClientResponseDumper(nil)),
 			},
 		})
-		coordinate := pingapi.PingServiceClient{}.ServiceCoordinate()
+		coordinate := srpc.GetCoordinate(pingapi.PingServiceClient{}, srpc.ServiceCoordinate{})
+		sName, sTags := srpcconsul.GetServiceSelector(coordinate)
 		if node.ConsulClient != nil {
 			clientCtx, err := kitutil.MakeClientEndpointContext(kitutil.ClientEndpointConf{
 				Node:             node,
 				Factory:          factory,
-				InstancerService: "services." + coordinate.ServiceTypeName(),
+				InstancerService: sName,
+				InstancerTags:    sTags,
 			})
 			if err != nil {
 				panic(err)
@@ -84,9 +90,9 @@ var callCmd = &cobra.Command{
 			ep = edp
 		}
 
-		ep = srpc.InvokeLoggingMiddleware(node.Logger)(ep)
+		ep = srpckit.InvokeLoggingMiddleware(node.Logger)(ep)
 		client := &pingapi.PingServiceClient{}
-		hfunc := srpc.HandlerFuncOfEndpoint(ep)
+		hfunc := srpckit.HandlerFuncOfEndpoint(ep)
 		if err := srpc.MakeRPCCallClient(hfunc, srpc.ServiceCoordinate{}, client); err != nil {
 			panic(err)
 		}

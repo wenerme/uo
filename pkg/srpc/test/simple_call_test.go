@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/wenerme/uo/pkg/srpc/srpckit"
+
 	"github.com/go-kit/kit/endpoint"
 	kitlog "github.com/go-kit/kit/log"
 
@@ -49,7 +51,7 @@ func TestSimpleCall(t *testing.T) {
 
 		stringSvcClient := &StringServiceClient{}
 
-		assert.NoError(t, srpc.MakeRPCCallClient(srpc.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{
+		assert.NoError(t, srpc.MakeRPCCallClient(srpckit.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{
 			ServiceName: "StringService",
 			PackageName: "com.example.test",
 		}, stringSvcClient))
@@ -57,7 +59,7 @@ func TestSimpleCall(t *testing.T) {
 		StringServiceClientSpec(t, stringSvcClient)
 
 		echoSvcClient := &EchoServiceClient{}
-		assert.NoError(t, srpc.MakeRPCCallClient(srpc.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{}, echoSvcClient))
+		assert.NoError(t, srpc.MakeRPCCallClient(srpckit.HandlerFuncOfEndpoint(ep), srpc.ServiceCoordinate{}, echoSvcClient))
 
 		EchoServiceClientSpec(t, echoSvcClient)
 	}
@@ -101,9 +103,9 @@ func makeTestServer() *httptransport.Server {
 	options := []httptransport.ServerOption{
 		httptransport.ServerBefore(srpchttp.MakeRequestDumper(nil)),
 	}
-	ep := srpc.MakeServerEndpoint(svr)
+	ep := srpckit.MakeServerEndpoint(svr)
 	logger := kitlog.NewLogfmtLogger(os.Stdout)
-	ep = endpoint.Chain(srpc.InvokeLoggingMiddleware(logger))(ep)
+	ep = endpoint.Chain(srpckit.InvokeLoggingMiddleware(logger))(ep)
 
 	handler := httptransport.NewServer(
 		ep,
