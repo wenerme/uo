@@ -3,6 +3,7 @@ package httpmore
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	stdlog "log"
@@ -17,7 +18,7 @@ type RequestInit struct {
 	Method   string
 	BaseURL  string
 	URL      string
-	Query    url.Values
+	Query    interface{}
 	Body     io.Reader
 	JSONBody interface{}
 	Header   http.Header
@@ -42,7 +43,24 @@ func (r RequestInit) Merge(o RequestInit) RequestInit {
 		r.Context = o.Context
 	}
 
-	r.Query = mergeMapSliceString(r.Query, o.Query)
+	switch {
+	case r.Query == nil:
+		r.Query = o.Query
+	case o.Query == nil:
+		// keep
+	default:
+		if a, ae := queryValues(r.Query); ae == nil {
+			if b, be := queryValues(o.Query); be == nil {
+				r.Query = mergeMapSliceString(a, b)
+			} else {
+				stdlog.Printf("httmore.RequestInit.Merge: convert query failed %v", be)
+			}
+		} else {
+			stdlog.Printf("httmore.RequestInit.Merge: convert query failed %v", ae)
+			r.Query = o.Query
+		}
+	}
+
 	r.Header = mergeMapSliceString(r.Header, o.Header)
 
 	return r
@@ -53,7 +71,11 @@ func (r RequestInit) NewRequest() (*http.Request, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	req, err := http.NewRequestWithContext(ctx, r.Method, r.GetURL(), nil)
+	u, err := r.GetURL()
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, r.Method, u, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,18 +111,22 @@ func (r *RequestInit) GetBody() (io.ReadCloser, error) {
 	}
 	return ioutil.NopCloser(b), nil
 }
-func (r *RequestInit) GetURL() string {
+func (r *RequestInit) GetURL() (string, error) {
 	u := r.URL
 	if strings.HasPrefix(u, "/") {
 		u = r.BaseURL + u
 	}
-	if len(r.Query) > 0 {
+	v, err := queryValues(r.Query)
+	if err != nil {
+		return "", err
+	}
+	if len(v) > 0 {
 		if parsed, err := url.Parse(u); err == nil {
-			parsed.RawQuery = (url.Values)(mergeMapSliceString(r.Query, parsed.Query())).Encode()
+			parsed.RawQuery = (url.Values)(mergeMapSliceString(v, parsed.Query())).Encode()
 			u = parsed.String()
 		} else {
-			stdlog.Printf("httpmore.GetURL: parse url failed %v", err)
+			return "", fmt.Errorf("httpmore.GetURL: parse url failed %v", err)
 		}
 	}
-	return u
+	return u, nil
 }

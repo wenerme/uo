@@ -21,9 +21,7 @@ func TestServerErrorCase(t *testing.T) {
 	}
 	{
 		resp := server.ServeRequest(&srpc.Request{
-			Coordinate: srpc.ServiceCoordinate{
-				ServiceName: "StringService",
-			},
+			Coordinate: test.StringService{}.ServiceCoordinate(),
 		})
 		assert.Equal(t, srpc.ErrCodeMethodNotFound, resp.Error.ErrorCode)
 	}

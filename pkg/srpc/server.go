@@ -123,7 +123,7 @@ func (svr *Server) ServeRequest(req *Request) (resp *Response) {
 	}
 	method, ok := svc.methods[req.MethodName]
 	if !ok {
-		s := fmt.Sprintf("rc.ServeRequest: method not found %s.%s()", req.Coordinate.ServiceName, req.MethodName)
+		s := fmt.Sprintf("rc.ServeRequest: method not found %s.%s()", req.Coordinate.ServiceTypeName(), req.MethodName)
 		log.Println(s)
 		resp.Error = &Error{
 			StatusCode: http.StatusBadRequest,
