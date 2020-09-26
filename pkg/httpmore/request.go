@@ -65,7 +65,10 @@ func (r RequestInit) WithOverride(o RequestInit) RequestInit {
 	}
 
 	r.Header = mergeMapSliceString(r.Header, o.Header)
-
+	if r.Options == nil {
+		r.Options = Values{}
+	}
+	r.Options = r.Options.Clone().WithMerge(o.Options)
 	return r
 }
 

@@ -8,6 +8,15 @@ import (
 	"github.com/wenerme/uo/pkg/httpmore"
 )
 
+func TestOverride(t *testing.T) {
+	{
+		assert.Equal(t,
+			httpmore.RequestInit{}.WithOverride(httpmore.RequestInit{Options: httpmore.Values{}.Add("1", "2").Add("1", "3")}),
+			httpmore.RequestInit{Options: httpmore.Values{}.Add("1", "2")}.WithOverride(httpmore.RequestInit{Options: httpmore.Values{}.Add("1", "3")}),
+		)
+	}
+}
+
 func TestUrlBuild(t *testing.T) {
 	{
 		r, err := httpmore.RequestInit{
