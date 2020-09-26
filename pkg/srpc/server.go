@@ -110,7 +110,7 @@ func errorOfRemoteCall(err error) *Error {
 func (svr *Server) ServeRequest(req *Request) (resp *Response) {
 	resp = &Response{}
 
-	svc, ok := svr.services[req.Coordinate.ToServicePath()]
+	svc, ok := svr.services[req.Coordinate.ServicePath()]
 	if !ok {
 		s := fmt.Sprintf("rc.ServeRequest: service %q not found", req.Coordinate.ServiceName)
 		log.Println(s)
@@ -173,7 +173,7 @@ func (svr *Server) register(conf ServiceRegisterConf) error {
 	log.Printf("rc.Register: register %s %s v%s", coord.Group, coord.ServiceTypeName(), coord.Version)
 	s.methods = suitableMethods(typ, true)
 
-	svr.services[coord.ToServicePath()] = s
+	svr.services[coord.ServicePath()] = s
 	return nil
 }
 

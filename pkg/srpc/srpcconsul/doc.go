@@ -1,6 +1,6 @@
 // Consul KV structure
-// conf/services/{group}/{service}
+// services/{group}/{service}/{version}
 //
 // Consul Service Structure
-// service-{group}-{service.replace('.','-')}
+// {group}-{service.replace('.','-')}-{version}
 package srpcconsul

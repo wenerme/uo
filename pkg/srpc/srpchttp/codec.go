@@ -86,7 +86,7 @@ func EncodeRequest(ctx context.Context, req *http.Request, request interface{}) 
 	}
 	// fixme
 	prefix := DefaultPrefix
-	req.URL.Path = fmt.Sprintf("%s/%s/call/%s", prefix, r.Coordinate.ToServicePath(), r.MethodName)
+	req.URL.Path = fmt.Sprintf("%s/%s/call/%s", prefix, r.Coordinate.ServicePath(), r.MethodName)
 
 	if r.RequestID != "" {
 		req.Header.Set(headerXRequestID, r.RequestID)
