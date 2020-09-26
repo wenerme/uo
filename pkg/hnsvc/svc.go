@@ -86,7 +86,7 @@ func (s *HackerNewsService) request(r httpmore.RequestInit, out interface{}) err
 
 	base := s.BaseRequest
 	client := s.Client
-	req, err := base.Merge(r).NewRequest()
+	req, err := base.WithOverride(r).NewRequest()
 	if err != nil {
 		return err
 	}

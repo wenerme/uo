@@ -14,6 +14,7 @@ func mergeMapSliceString(a map[string][]string, b map[string][]string) map[strin
 	return c
 }
 func cloneMapSliceString(h map[string][]string) map[string][]string {
+	// return http.Header(h).Clone()
 	if h == nil {
 		return nil
 	}
@@ -31,4 +32,57 @@ func cloneMapSliceString(h map[string][]string) map[string][]string {
 		sv = sv[n:]
 	}
 	return h2
+}
+
+type Values map[string][]string
+
+// Get gets the first value associated with the given key.
+// If there are no values associated with the key, Get returns
+// the empty string. To access multiple values, use the map
+// directly.
+func (v Values) Get(key string) string {
+	if v == nil {
+		return ""
+	}
+	vs := v[key]
+	if len(vs) == 0 {
+		return ""
+	}
+	return vs[0]
+}
+
+// Set sets the key to value. It replaces any existing
+// values.
+func (v Values) Set(key, value string) Values {
+	v[key] = []string{value}
+	return v
+}
+
+// Add adds the value to key. It appends to any existing
+// values associated with key.
+func (v Values) Add(key, value string) Values {
+	v[key] = append(v[key], value)
+	return v
+}
+
+// Del deletes the values associated with key.
+func (v Values) Del(key string) Values {
+	delete(v, key)
+	return v
+}
+func (v Values) Clone() Values {
+	return cloneMapSliceString(v)
+}
+
+func (v Values) WithMerge(o Values) Values {
+	for k, vv := range o {
+		v[k] = append(v[k], vv...)
+	}
+	return v
+}
+func (v Values) WithOverride(o Values) Values {
+	for k, vv := range o {
+		v[k] = vv
+	}
+	return v
 }

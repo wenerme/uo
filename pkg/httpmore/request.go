@@ -25,9 +25,10 @@ type RequestInit struct {
 	JSONBody interface{}
 	Header   http.Header
 	Context  context.Context
+	Options  Values // Extra options for customized process - non string option use Context
 }
 
-func (r RequestInit) Merge(o RequestInit) RequestInit {
+func (r RequestInit) WithOverride(o RequestInit) RequestInit {
 	if o.Method != "" {
 		r.Method = o.Method
 	}
