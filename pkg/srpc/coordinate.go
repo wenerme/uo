@@ -19,7 +19,7 @@ func GetCoordinate(v interface{}) ServiceCoordinate {
 		c = sc.ServiceCoordinate()
 	}
 
-	if c.ServiceName == "" {
+	if c.ServiceName == "" && v != nil {
 		rt := reflect.TypeOf(v)
 		if rt.Kind() == reflect.Ptr {
 			rt = rt.Elem()
@@ -94,4 +94,8 @@ func (sc ServiceCoordinate) WithOverride(o ServiceCoordinate) ServiceCoordinate 
 		sc.Group = o.Group
 	}
 	return sc
+}
+
+func (sc ServiceCoordinate) IsValid() bool {
+	return sc.ServiceName != ""
 }
