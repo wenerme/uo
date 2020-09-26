@@ -1,9 +1,8 @@
 package srpc_test
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
-
-	"github.com/magiconair/properties/assert"
 
 	"github.com/wenerme/uo/pkg/srpc"
 	"github.com/wenerme/uo/pkg/srpc/test"

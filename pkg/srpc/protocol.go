@@ -3,8 +3,6 @@ package srpc
 import (
 	"context"
 	"fmt"
-
-	"golang.org/x/mod/semver"
 )
 
 type HandlerFunc func(ctx context.Context, request *Request) (response *Response, err error)
@@ -17,38 +15,6 @@ type ServiceCoordinate struct {
 	Version     string // semver
 	PackageName string
 	ServiceName string
-}
-
-func (sc ServiceCoordinate) Normalize() ServiceCoordinate {
-	g := sc.Group
-	if g == "" {
-		g = DefaultGroup
-	}
-	v := sc.Version
-	if v == "" {
-		v = DefaultVersion
-	}
-	return ServiceCoordinate{
-		Group:       g,
-		Version:     v,
-		ServiceName: sc.ServiceName,
-		PackageName: sc.PackageName,
-	}
-}
-func (sc ServiceCoordinate) ServicePath() string {
-	return fmt.Sprintf("%s/%s/%s", sc.Group, sc.ServiceTypeName(), sc.MajorVersion())
-}
-func (sc ServiceCoordinate) MajorVersion() string {
-	if sc.Version == "" {
-		return semver.Major(DefaultVersion)
-	}
-	return semver.Major(sc.Version)
-}
-func (sc ServiceCoordinate) ServiceTypeName() string {
-	if sc.PackageName != "" {
-		return sc.PackageName + "." + sc.ServiceName
-	}
-	return sc.ServiceName
 }
 
 type Request struct {

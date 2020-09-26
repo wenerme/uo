@@ -112,7 +112,7 @@ func (svr *Server) ServeRequest(req *Request) (resp *Response) {
 
 	svc, ok := svr.services[req.Coordinate.ServicePath()]
 	if !ok {
-		s := fmt.Sprintf("rc.ServeRequest: service %q not found", req.Coordinate.ServiceName)
+		s := fmt.Sprintf("rc.ServeRequest: service %q not found", req.Coordinate.ServicePath())
 		log.Println(s)
 		resp.Error = &Error{
 			StatusCode: http.StatusBadRequest,
@@ -123,7 +123,7 @@ func (svr *Server) ServeRequest(req *Request) (resp *Response) {
 	}
 	method, ok := svc.methods[req.MethodName]
 	if !ok {
-		s := fmt.Sprintf("rc.ServeRequest: method not found %s.%s()", req.Coordinate.ServiceTypeName(), req.MethodName)
+		s := fmt.Sprintf("rc.ServeRequest: method not found %s %q", req.Coordinate.ServicePath(), req.MethodName)
 		log.Println(s)
 		resp.Error = &Error{
 			StatusCode: http.StatusBadRequest,
