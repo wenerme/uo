@@ -69,7 +69,7 @@ var callCmd = &cobra.Command{
 				httptransport.ClientAfter(srpchttp.MakeClientResponseDumper(nil)),
 			},
 		})
-		coordinate := srpc.GetCoordinate(pingapi.PingServiceClient{}, srpc.ServiceCoordinate{})
+		coordinate := srpc.GetCoordinate(pingapi.PingServiceClient{})
 		sName, sTags := srpcconsul.GetServiceSelector(coordinate)
 		if node.ConsulClient != nil {
 			clientCtx, err := kitutil.MakeClientEndpointContext(kitutil.ClientEndpointConf{

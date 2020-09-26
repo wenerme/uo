@@ -162,7 +162,7 @@ func (svr *Server) register(conf ServiceRegisterConf) error {
 
 	s.typ = typ
 
-	coord := GetCoordinate(conf.Target, conf.Coordinate)
+	coord := GetCoordinate(conf.Target).WithOverride(conf.Coordinate)
 
 	if !token.IsExported(coord.ServiceName) {
 		s := "rc.Register: type " + coord.ServiceName + " is not exported"

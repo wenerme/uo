@@ -78,7 +78,7 @@ var serverCmd = &cobra.Command{
 		server := srpc.NewServer()
 
 		pingService := &pingapi.PingService{}
-		coordinate := srpc.GetCoordinate(pingService, srpc.ServiceCoordinate{})
+		coordinate := srpc.GetCoordinate(pingService)
 		server.MustRegister(srpc.ServiceRegisterConf{
 			Target: pingService,
 		})

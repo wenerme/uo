@@ -7,6 +7,7 @@ import (
 	"github.com/wenerme/uo/pkg/srpc/srpchttp"
 
 	consulapi "github.com/hashicorp/consul/api"
+
 	"github.com/wenerme/uo/pkg/srpc"
 )
 

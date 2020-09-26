@@ -3,21 +3,23 @@ package srpc
 import (
 	"fmt"
 	"go/token"
-	"golang.org/x/mod/semver"
 	"reflect"
 	"strings"
+
+	"golang.org/x/mod/semver"
 )
 
 type hasServiceCoordinate interface {
 	ServiceCoordinate() ServiceCoordinate
 }
 
-func GetCoordinate(v interface{}, override ServiceCoordinate) ServiceCoordinate {
+func GetCoordinate(v interface{}) ServiceCoordinate {
+	c := ServiceCoordinate{}
 	if sc, ok := v.(hasServiceCoordinate); ok {
-		override = sc.ServiceCoordinate().WithOverride(override)
+		c = sc.ServiceCoordinate()
 	}
 
-	if override.ServiceName == "" {
+	if c.ServiceName == "" {
 		rt := reflect.TypeOf(v)
 		if rt.Kind() == reflect.Ptr {
 			rt = rt.Elem()
@@ -28,10 +30,10 @@ func GetCoordinate(v interface{}, override ServiceCoordinate) ServiceCoordinate 
 			if strings.HasSuffix(name, "Client") {
 				name = name[:len(name)-len("Client")]
 			}
-			override.ServiceName = name
+			c.ServiceName = name
 		}
 	}
-	return override.Normalize()
+	return c.Normalize()
 }
 
 func (sc ServiceCoordinate) Normalize() ServiceCoordinate {

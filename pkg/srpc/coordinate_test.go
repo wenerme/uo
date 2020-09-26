@@ -41,12 +41,13 @@ func TestCoordinateMerge(t *testing.T) {
 
 func TestGetCoordinate(t *testing.T) {
 	assert.Equal(t,
-		srpc.GetCoordinate(&CoordinateTestService{}, srpc.ServiceCoordinate{PackageName: "me.wener"}),
-		srpc.ServiceCoordinate{ServiceName: "CoordinateTestService", PackageName: "me.wener"}.Normalize(),
+		srpc.GetCoordinate(&CoordinateTestService{}),
+		srpc.ServiceCoordinate{ServiceName: "CoordinateTestService", PackageName: "me.wener.testing"}.Normalize(),
 	)
+
 	assert.Equal(t,
-		srpc.GetCoordinate(&CoordinateTestServiceClient{}, srpc.ServiceCoordinate{Group: "auth", Version: "1.2.0"}),
-		srpc.ServiceCoordinate{ServiceName: "CoordinateTestService", Group: "auth", Version: "1.2.0", PackageName: "me.wener.testing"},
+		srpc.GetCoordinate(&CoordinateTestService{}),
+		srpc.GetCoordinate(&CoordinateTestServiceClient{}),
 	)
 }
 
