@@ -59,7 +59,7 @@ func (svc *service) call(server *Server, req *Request, resp *Response, method *s
 		}
 		if err := req.GetArgument(argv.Interface()); err != nil {
 			log.Printf("srpc.service.call: GetArgument failed %v", err)
-			resp.Error = errorOfRemoteCall(err)
+			resp.Error = ErrorOf(err)
 			return
 		}
 		//
@@ -93,22 +93,12 @@ func (svc *service) call(server *Server, req *Request, resp *Response, method *s
 	}
 	var err = ret[len(ret)-1]
 	if !err.IsNil() {
-		resp.Error = errorOfRemoteCall(err.Interface().(error))
-	}
-}
-
-func errorOfRemoteCall(err error) *Error {
-	if err == nil {
-		return nil
-	}
-	return &Error{
-		StatusCode: 500,
-		Message:    err.Error(),
+		resp.Error = ErrorOf(err.Interface().(error))
 	}
 }
 
 func (svr *Server) ServeRequest(req *Request) (resp *Response) {
-	resp = &Response{}
+	resp = ResponseOf(req)
 
 	svc, ok := svr.services[req.Coordinate.ServicePath()]
 	if !ok {

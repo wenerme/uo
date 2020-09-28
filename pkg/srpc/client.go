@@ -5,11 +5,11 @@ import (
 )
 
 type Client struct {
-	handler    HandlerFunc
+	handler    InvokeFunc
 	coordinate ServiceCoordinate
 }
 
-func NewClient(handler HandlerFunc, coordinate ServiceCoordinate) *Client {
+func NewClient(handler InvokeFunc, coordinate ServiceCoordinate) *Client {
 	return &Client{
 		handler:    handler,
 		coordinate: coordinate,
@@ -21,16 +21,17 @@ func (cli *Client) Call(ctx context.Context, methodName string, arg interface{},
 		ctx = context.Background()
 	}
 	h := cli.handler
-	r, err := h(ctx, &Request{
+	r := h(&Request{
 		Context:    ctx,
 		MethodName: methodName,
 		Coordinate: cli.coordinate,
 		Argument:   arg,
 	})
 
-	if err != nil {
-		return err
+	if r.Error != nil {
+		return r.Error
 	}
+
 	return r.GetReply(reply)
 }
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type HandlerFunc func(ctx context.Context, request *Request) (response *Response, err error)
+type InvokeFunc func(request *Request) (response *Response)
 
 var DefaultGroup = "default"
 var DefaultVersion = "v1.0.0"
@@ -33,13 +33,13 @@ type Request struct {
 }
 
 type Response struct {
-	RequestID string `json:"requestId"`
+	RequestID string
 	// Server use Reply to return the response to client
 	Reply interface{}
 	// Client use GetReply to get target typed replay
 	GetReply func(out interface{}) error
 
-	Error *Error
+	Error error
 
 	Context context.Context
 }
@@ -62,11 +62,21 @@ func ErrorOf(err error) *Error {
 	if err == nil {
 		return nil
 	}
-	if e, ok := err.(*Error); ok {
-		return e
+	switch t := err.(type) {
+	case *Error:
+		return t
+	case Error:
+		return &t
 	}
 	return &Error{
 		StatusCode: 500,
 		Message:    err.Error(),
+	}
+}
+
+func ResponseOf(r *Request) *Response {
+	return &Response{
+		RequestID: r.RequestID,
+		Context:   r.Context,
 	}
 }

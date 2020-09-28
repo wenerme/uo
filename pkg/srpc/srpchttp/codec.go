@@ -73,8 +73,9 @@ func EncodeResponse(_ context.Context, rw http.ResponseWriter, res interface{}) 
 		rw.Header().Set(headerXRequestID, r.RequestID)
 	}
 	if r.Error != nil {
-		rw.WriteHeader(r.Error.StatusCode)
-		return jsoniter.NewEncoder(rw).Encode(r.Error)
+		err := srpc.ErrorOf(r.Error)
+		rw.WriteHeader(err.StatusCode)
+		return jsoniter.NewEncoder(rw).Encode(err)
 	}
 	return jsoniter.NewEncoder(rw).Encode(r.Reply)
 }
@@ -114,10 +115,13 @@ func DecodeResponse(ctx context.Context, resp *http.Response) (response interfac
 			StatusCode: resp.StatusCode,
 			Message:    resp.Status,
 		}
-		if err := jsoniter.NewDecoder(resp.Body).Decode(r.Error); err != nil {
+		rErr := srpc.Error{}
+		if err := jsoniter.NewDecoder(resp.Body).Decode(&rErr); err != nil {
 			log.Printf("httptrans.DecodeResponse: encode error failed %s", err)
+			return nil, err
 		}
-		return nil, r.Error
+		r.Error = rErr
+		return r, nil
 	}
 
 	r.GetReply = func(out interface{}) error {

@@ -53,27 +53,33 @@ func InvokeLoggingMiddleware(logger log.Logger) endpoint.Middleware {
 	}
 }
 
-func EndpointOfHandlerFunc(f srpc.HandlerFunc) endpoint.Endpoint {
+func EndpointOfHandlerFunc(f srpc.InvokeFunc) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		r, ok := request.(*srpc.Request)
 		if !ok {
 			return nil, fmt.Errorf("srpc.EndpointOfHandlerFunc: invalid request type %T", request)
 		}
-
-		return f(ctx, r)
+		if r.Context == nil {
+			r.Context = ctx
+		}
+		return f(r), nil
 	}
 }
-func HandlerFuncOfEndpoint(f endpoint.Endpoint) srpc.HandlerFunc {
-	return func(ctx context.Context, request *srpc.Request) (*srpc.Response, error) {
-		resp, err := f(ctx, request)
+func HandlerFuncOfEndpoint(f endpoint.Endpoint) srpc.InvokeFunc {
+	return func(request *srpc.Request) *srpc.Response {
+		resp, err := f(request.Context, request)
 		if err != nil {
-			return nil, err
+			r := srpc.ResponseOf(request)
+			r.Error = err
+			return r
 		}
 
 		r, ok := resp.(*srpc.Response)
 		if !ok {
-			return nil, fmt.Errorf("srpc.HandlerFuncOfEndpoint: invalid response type %T", resp)
+			r := srpc.ResponseOf(request)
+			r.Error = fmt.Errorf("srpc.HandlerFuncOfEndpoint: invalid response type %T", resp)
+			return r
 		}
-		return r, nil
+		return r
 	}
 }

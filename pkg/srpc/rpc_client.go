@@ -8,7 +8,7 @@ import (
 var nilError = reflect.Zero(reflect.TypeOf((*error)(nil)).Elem())
 
 // MakeRPCCallClient can make a struct as a rpc client, the method is defined as fields
-func MakeRPCCallClient(handler HandlerFunc, coord ServiceCoordinate, v interface{}) error {
+func MakeRPCCallClient(handler InvokeFunc, coord ServiceCoordinate, v interface{}) error {
 	val := reflect.ValueOf(v)
 	typ := val.Type().Elem()
 
@@ -22,16 +22,17 @@ func MakeRPCCallClient(handler HandlerFunc, coord ServiceCoordinate, v interface
 				rv := reflect.New(f.Type.Out(0))
 
 				req := &Request{
+					Context:    context.Background(),
 					Coordinate: coord,
 
 					MethodName: f.Name,
 					Argument:   args[0].Interface(),
 				}
 
-				resp, err := handler(context.Background(), req)
+				resp := handler(req)
 
-				if err != nil {
-					return []reflect.Value{rv.Elem(), reflect.ValueOf(err)}
+				if resp.Error != nil {
+					return []reflect.Value{rv.Elem(), reflect.ValueOf(resp.Error)}
 				}
 
 				if err := resp.GetReply(rv.Interface()); err != nil {
